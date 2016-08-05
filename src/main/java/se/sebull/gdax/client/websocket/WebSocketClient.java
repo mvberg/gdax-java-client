@@ -8,7 +8,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import javax.websocket.ClientEndpoint;
-import javax.websocket.CloseReason;
 import javax.websocket.ContainerProvider;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
@@ -22,7 +21,7 @@ public class WebSocketClient {
 
 	private final String socketUrl;
 	private Session session;
-	private final List<IdentifiableMessageHandler<String>> messageHandlers = new ArrayList<>();
+	private final List<MessageHandler<String>> messageHandlers = new ArrayList<>();
 	
 	public WebSocketClient(String socketUrl) {
 		this.socketUrl = Objects.requireNonNull(socketUrl);
@@ -55,16 +54,16 @@ public class WebSocketClient {
 		if (session == null || !session.isOpen()) {
 			connected = false;
 			connect();
-			for (int i = 0; i < 20; i++) {
+			for (int i = 0; i < 30; i++) {
 				sleep(100);
 				if (session != null) {
 					connected = true;
 					break;
 				}
 			}
-		}
-		if (!connected) {
-			throw new RuntimeException("Failed to connect");
+			if (!connected) {
+				throw new RuntimeException("Failed to connect");
+			}
 		}
 		try {
 			session.getAsyncRemote().sendText(message).get(3, TimeUnit.SECONDS);
@@ -82,7 +81,7 @@ public class WebSocketClient {
 		}
 	}
 	
-	public void addMessageHandler(IdentifiableMessageHandler<String> messageHandler) {
+	public void addMessageHandler(MessageHandler<String> messageHandler) {
 		messageHandlers.add(messageHandler);
 	}
 	
@@ -97,7 +96,7 @@ public class WebSocketClient {
 	}
 	
 	@OnClose
-    public void onClose(Session session, CloseReason closeReason) {
+    public void onClose() {
 		this.session = null;
 	}
 	

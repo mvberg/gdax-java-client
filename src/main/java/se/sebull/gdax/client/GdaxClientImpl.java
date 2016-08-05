@@ -21,14 +21,14 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.type.CollectionType;
 
 import se.sebull.gdax.GdaxConfig;
 import se.sebull.gdax.client.websocket.GdaxWebSocketResponse;
 import se.sebull.gdax.client.websocket.GdaxWebSocketSubscription;
-import se.sebull.gdax.client.websocket.IdentifiableMessageHandler;
+import se.sebull.gdax.client.websocket.MessageHandler;
 import se.sebull.gdax.client.websocket.WebSocketClient;
 import se.sebull.gdax.restapi.GdaxAccount;
 import se.sebull.gdax.restapi.GdaxLocalDateTimeDeserializer;
@@ -82,18 +82,18 @@ public class GdaxClientImpl implements GdaxClient {
 
 	@Override
 	public List<GdaxProduct> getProducts() {
-		return toList(request(createGet("/products")));
+		return toList(GdaxProduct.class, request(createGet("/products")));
 	}
 
 	@Override
 	public List<GdaxTrade> getTrades(String productId) {
-		return toList(request(createGet("/products/" + productId + "/trades")));
+		return toList(GdaxTrade.class, request(createGet("/products/" + productId + "/trades")));
 	}
 
 	@Override
 	public List<GdaxAccount> getAccounts() {
 		String endpoint = "/accounts";
-		return toList(privateRequest(createGet(endpoint), endpoint));
+		return toList(GdaxAccount.class, privateRequest(createGet(endpoint), endpoint));
 	}
 
 	@Override
@@ -110,7 +110,7 @@ public class GdaxClientImpl implements GdaxClient {
 	@Override
 	public List<GdaxOrderResponse> listOrders() {
 		String endpoint = "/orders";
-		return toList(privateRequest(createGet(endpoint), endpoint));
+		return toList(GdaxOrderResponse.class, privateRequest(createGet(endpoint), endpoint));
 	}
 
 	@Override
@@ -129,21 +129,16 @@ public class GdaxClientImpl implements GdaxClient {
 	@Override
 	public void cancelOrder(String orderId) {
 		String endpoint = "/orders/" + orderId;
-		String string = privateRequest(createDelete(endpoint), endpoint);
-		System.out.println(string);
+		privateRequest(createDelete(endpoint), endpoint);
 	}
 
 	@Override
 	public void subscribeToProduct(GdaxWebSocketSubscription subscription) {
 		webSocketClient.sendMessage(subscription.toSubscriptionJson());
-		webSocketClient.addMessageHandler(new IdentifiableMessageHandler<String>() {
+		webSocketClient.addMessageHandler(new MessageHandler<String>() {
 			@Override
 			public void onMessage(String message) {
 				subscription.onMessage(toObject(message, GdaxWebSocketResponse.class));
-			}
-			@Override
-			public String getId() {
-				return subscription.getProductId();
 			}
 		});
 	}
@@ -200,8 +195,9 @@ public class GdaxClientImpl implements GdaxClient {
 		});
 	}
 
-	private static <T> List<T> toList(String json) {
-		return unchecked(() -> objectMapper.readValue(json, new TypeReference<List<?>>() {}));
+	private <T> List<T> toList(Class<T> clazz, String json) {
+		CollectionType collectionType = objectMapper.getTypeFactory().constructCollectionType(List.class, clazz);
+		return unchecked(() -> objectMapper.readValue(json, collectionType));
 	}
 
 	private static <T> T toObject(String json, Class<T> clazz) {

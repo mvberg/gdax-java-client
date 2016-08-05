@@ -85,7 +85,8 @@ public class GdaxClientTest {
 	@Test
 	public void getTradesTest() {
 		List<GdaxTrade> trades = client.getTrades("BTC-USD");
-		System.out.println("getTrades() " + trades);
+		System.out.println("getTrades()");
+		trades.stream().forEach(System.out::println);
 		assertTrue(trades.size() > 1);
 	}
 
