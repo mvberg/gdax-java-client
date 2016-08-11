@@ -1,4 +1,4 @@
-package se.sebull.gdax.restapi;
+package se.sebull.gdax.common;
 
 /**
  * lower case so it can be deserialized as is

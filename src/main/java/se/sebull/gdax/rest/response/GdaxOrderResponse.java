@@ -1,14 +1,17 @@
-package se.sebull.gdax.restapi;
+package se.sebull.gdax.rest.response;
 
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import se.sebull.gdax.common.OrderStatus;
+import se.sebull.gdax.common.TradeSide;
+
 /**
  * Reused in API for creating, listing and getting orders
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GdaxOrderResponse {
+public class GdaxOrderResponse extends GdaxHttpResponse {
 
 	public String id;
 	public Double price;

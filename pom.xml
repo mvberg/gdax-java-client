@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>se.sebull</groupId>
 	<artifactId>gdax-java-client</artifactId>
-	<version>DEV</version>
+	<version>DEVEL-SNAPSHOT</version>
 
 	<name>gdax-java-client</name>
 	<url>https://github.com/sebull/gdax-java-client</url>

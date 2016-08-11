@@ -1,9 +1,9 @@
-package se.sebull.gdax.restapi;
+package se.sebull.gdax.rest.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GdaxAccount {
+public class GdaxAccountResponse extends GdaxHttpResponse {
 
 	public String id;
 	public Double balance;

@@ -1,5 +1,8 @@
-package se.sebull.gdax.restapi;
+package se.sebull.gdax.common;
 
+/**
+ * Optional when placing an order
+ */
 public enum TimeInForce {
 
 	GTC,

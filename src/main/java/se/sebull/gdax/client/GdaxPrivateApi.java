@@ -2,10 +2,10 @@ package se.sebull.gdax.client;
 
 import java.util.List;
 
-import se.sebull.gdax.GdaxConfig;
-import se.sebull.gdax.restapi.GdaxAccount;
-import se.sebull.gdax.restapi.GdaxOrderRequest;
-import se.sebull.gdax.restapi.GdaxOrderResponse;
+import se.sebull.gdax.rest.request.GdaxOrderRequest;
+import se.sebull.gdax.rest.response.GdaxAccountResponse;
+import se.sebull.gdax.rest.response.GdaxOrderResponse;
+import se.sebull.gdax.websocket.GdaxConfig;
 
 /**
  * Requires API authentication to be present in {@link GdaxConfig}
@@ -15,12 +15,12 @@ public interface GdaxPrivateApi {
 	/**
 	 * Get a list of trading accounts.
 	 */
-	List<GdaxAccount> getAccounts();
+	List<GdaxAccountResponse> getAccounts();
 	
 	/**
 	 * Information for a single account. Use this endpoint when you know the account_id.
 	 */
-	GdaxAccount getAccount(String accountId);
+	GdaxAccountResponse getAccount(String accountId);
 	
 	/**
 	 * You can place different types of orders: limit, market, and stop.

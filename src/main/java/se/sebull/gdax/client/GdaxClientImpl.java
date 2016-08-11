@@ -25,18 +25,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.CollectionType;
 
-import se.sebull.gdax.GdaxConfig;
-import se.sebull.gdax.client.websocket.GdaxWebSocketResponse;
-import se.sebull.gdax.client.websocket.GdaxWebSocketSubscription;
-import se.sebull.gdax.client.websocket.MessageHandler;
-import se.sebull.gdax.client.websocket.WebSocketClient;
-import se.sebull.gdax.restapi.GdaxAccount;
-import se.sebull.gdax.restapi.GdaxLocalDateTimeDeserializer;
-import se.sebull.gdax.restapi.GdaxOrderRequest;
-import se.sebull.gdax.restapi.GdaxOrderResponse;
-import se.sebull.gdax.restapi.GdaxProduct;
-import se.sebull.gdax.restapi.GdaxProductStats;
-import se.sebull.gdax.restapi.GdaxTrade;
+import se.sebull.gdax.common.GdaxLocalDateTimeDeserializer;
+import se.sebull.gdax.common.OrderBookLevel;
+import se.sebull.gdax.rest.request.GdaxOrderRequest;
+import se.sebull.gdax.rest.response.GdaxAccountResponse;
+import se.sebull.gdax.rest.response.GdaxHistoricRatesResponse;
+import se.sebull.gdax.rest.response.GdaxOrderBookResponse;
+import se.sebull.gdax.rest.response.GdaxOrderResponse;
+import se.sebull.gdax.rest.response.GdaxProductResponse;
+import se.sebull.gdax.rest.response.GdaxProductStatsResponse;
+import se.sebull.gdax.rest.response.GdaxProductTickerResponse;
+import se.sebull.gdax.rest.response.GdaxServerTimeResponse;
+import se.sebull.gdax.rest.response.GdaxTradeResponse;
+import se.sebull.gdax.websocket.GdaxConfig;
+import se.sebull.gdax.websocket.GdaxWebSocketResponse;
+import se.sebull.gdax.websocket.GdaxWebSocketSubscription;
+import se.sebull.gdax.websocket.MessageHandler;
+import se.sebull.gdax.websocket.WebSocketClient;
 
 public class GdaxClientImpl implements GdaxClient {
 
@@ -81,49 +86,55 @@ public class GdaxClientImpl implements GdaxClient {
 	}
 
 	@Override
-	public List<GdaxProduct> getProducts() {
-		return toList(GdaxProduct.class, request(createGet("/products")));
+	public List<GdaxProductResponse> getProducts() {
+		return toList(request(createGet("/products")).getJson(), GdaxProductResponse.class);
 	}
 
 	@Override
-	public List<GdaxTrade> getTrades(String productId) {
-		return toList(GdaxTrade.class, request(createGet("/products/" + productId + "/trades")));
+	public List<GdaxTradeResponse> getTrades(String productId) {
+		return toList(request(createGet("/products/" + productId + "/trades")).getJson(), GdaxTradeResponse.class);
+	}
+	
+	@Override
+	public GdaxOrderBookResponse getOrderBook(String productId, OrderBookLevel level) {
+		return toObject(request(createGet("/products/" + productId + "/book?level=" + level.getLevel())).getJson(),
+				GdaxOrderBookResponse.class);
 	}
 
 	@Override
-	public List<GdaxAccount> getAccounts() {
+	public List<GdaxAccountResponse> getAccounts() {
 		String endpoint = "/accounts";
-		return toList(GdaxAccount.class, privateRequest(createGet(endpoint), endpoint));
+		return toList(privateRequest(createGet(endpoint), endpoint).getJson(), GdaxAccountResponse.class);
 	}
 
 	@Override
-	public GdaxAccount getAccount(String accountId) {
+	public GdaxAccountResponse getAccount(String accountId) {
 		String endpoint = "/accounts/" + accountId;
-		return toObject(privateRequest(createGet(endpoint), endpoint), GdaxAccount.class);
+		return toObject(privateRequest(createGet(endpoint), endpoint).getJson(), GdaxAccountResponse.class);
 	}
 
 	@Override
-	public GdaxProductStats get24hStats(String productId) {
-		return toObject(request(createGet("/products/" + productId + "/stats")), GdaxProductStats.class);
+	public GdaxProductStatsResponse get24hStats(String productId) {
+		return toObject(request(createGet("/products/" + productId + "/stats")).getJson(), GdaxProductStatsResponse.class);
 	}
 
 	@Override
 	public List<GdaxOrderResponse> listOrders() {
 		String endpoint = "/orders";
-		return toList(GdaxOrderResponse.class, privateRequest(createGet(endpoint), endpoint));
+		return toList(privateRequest(createGet(endpoint), endpoint).getJson(), GdaxOrderResponse.class);
 	}
 
 	@Override
 	public GdaxOrderResponse getOrder(String orderId) {
 		String endpoint = "/orders/" + orderId;
-		return toObject(privateRequest(createGet(endpoint), endpoint), GdaxOrderResponse.class);
+		return toObject(privateRequest(createGet(endpoint), endpoint).getJson(), GdaxOrderResponse.class);
 	}
 
 	@Override
 	public GdaxOrderResponse placeOrder(GdaxOrderRequest order) {
 		String endpoint = "/orders";
 		String body = unchecked(() -> objectMapper.writeValueAsString(order));
-		return toObject(privateRequest(createPost(endpoint, body), endpoint, body), GdaxOrderResponse.class);
+		return toObject(privateRequest(createPost(endpoint, body), endpoint, body).getJson(), GdaxOrderResponse.class);
 	}
 	
 	@Override
@@ -131,7 +142,27 @@ public class GdaxClientImpl implements GdaxClient {
 		String endpoint = "/orders/" + orderId;
 		privateRequest(createDelete(endpoint), endpoint);
 	}
+	
+	@Override
+	public GdaxProductTickerResponse getTicker(String productId) {
+		return toObject(request(createGet("/products/" + productId + "/ticker")).getJson(), GdaxProductTickerResponse.class);
+	}
+	
+	@Override
+	public GdaxHistoricRatesResponse getHistoricRates(String productId, LocalDateTime start, LocalDateTime end,
+			int granularity) {
+		String params = String.format("?start=%s&end=%s&granularity=%d", start.toString(), end.toString(), granularity);
+		return toObject(request(createGet("/products/" + productId + "/candles" + params)).getJson(), GdaxHistoricRatesResponse.class);
+	}
 
+	@Override
+	public GdaxServerTimeResponse getServerTime() {
+		return toObject(request(createGet("/time")).getJson(), GdaxServerTimeResponse.class);
+	}
+
+	/**
+	 * TODO: singleton
+	 */
 	@Override
 	public void subscribeToProduct(GdaxWebSocketSubscription subscription) {
 		webSocketClient.sendMessage(subscription.toSubscriptionJson());
@@ -163,16 +194,16 @@ public class GdaxClientImpl implements GdaxClient {
 		return httpPost;
 	}
 
-	private String privateRequest(HttpUriRequest request, String endpoint) {
+	private HttpResponseHolder privateRequest(HttpUriRequest request, String endpoint) {
 		return privateRequest(request, endpoint, "");
 	}
 
-	private String privateRequest(HttpUriRequest request, String endpoint, String body) {
+	private HttpResponseHolder privateRequest(HttpUriRequest request, String endpoint, String body) {
 		long timestamp = Instant.now().getEpochSecond();
 		return privateRequest(request, generateSignature(request.getMethod(), endpoint, body, timestamp), timestamp);
 	}
 
-	private String privateRequest(HttpUriRequest request, String signature, long timestamp) {
+	private HttpResponseHolder privateRequest(HttpUriRequest request, String signature, long timestamp) {
 		request.addHeader("CB-ACCESS-KEY", gdaxConfig.getApiKey());
 		request.addHeader("CB-ACCESS-SIGN", signature);
 		request.addHeader("CB-ACCESS-TIMESTAMP", String.valueOf(timestamp));
@@ -185,21 +216,41 @@ public class GdaxClientImpl implements GdaxClient {
 		return Base64.getEncoder().encodeToString(sha256.doFinal(prehash.getBytes()));
 	}
 
-	private String request(HttpUriRequest request) {
+	private HttpResponseHolder request(HttpUriRequest request) {
 		request.addHeader("content-type", "application/json");
 		return unchecked(() -> {
-			try (BufferedReader br = new BufferedReader(
-					new InputStreamReader(httpClient.execute(request).getEntity().getContent()))) {
-				return br.lines().collect(Collectors.joining());
-			}
+			return new HttpResponseHolder(httpClient.execute(request));
 		});
 	}
+	
+	private static class HttpResponseHolder {
+		private final int status;
+		private final String json;
+		public HttpResponseHolder(org.apache.http.HttpResponse response) {
+			this.status = response.getStatusLine().getStatusCode();
+			this.json = getJson(response);
+		}
+		private String getJson(org.apache.http.HttpResponse response) {
+			try (BufferedReader br = new BufferedReader(
+					new InputStreamReader(response.getEntity().getContent()))) {
+				return br.lines().collect(Collectors.joining());
+			} catch (Exception e) {
+				return "";
+			}
+		}
+		public int getStatus() {
+			return status;
+		}
+		public String getJson() {
+			return json;
+		}
+	}
 
-	private <T> List<T> toList(Class<T> clazz, String json) {
+	private <T> List<T> toList(String json, Class<T> clazz) {
 		CollectionType collectionType = objectMapper.getTypeFactory().constructCollectionType(List.class, clazz);
 		return unchecked(() -> objectMapper.readValue(json, collectionType));
 	}
-
+	
 	private static <T> T toObject(String json, Class<T> clazz) {
 		return unchecked(() -> objectMapper.readValue(json, clazz));
 	}

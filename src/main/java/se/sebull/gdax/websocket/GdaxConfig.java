@@ -1,5 +1,4 @@
-package se.sebull.gdax;
-
+package se.sebull.gdax.websocket;
 
 import java.util.Objects;
 

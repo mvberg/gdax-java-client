@@ -1,4 +1,4 @@
-package se.sebull.gdax.restapi;
+package se.sebull.gdax.common;
 
 import java.io.IOException;
 import java.time.LocalDateTime;

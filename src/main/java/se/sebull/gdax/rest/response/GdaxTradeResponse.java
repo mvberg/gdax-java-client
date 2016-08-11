@@ -1,11 +1,13 @@
-package se.sebull.gdax.restapi;
+package se.sebull.gdax.rest.response;
 
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import se.sebull.gdax.common.TradeSide;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GdaxTrade {
+public class GdaxTradeResponse extends GdaxHttpResponse {
 
 	public LocalDateTime time;
 	public Integer trade_id;

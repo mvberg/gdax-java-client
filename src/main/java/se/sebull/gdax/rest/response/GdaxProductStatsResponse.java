@@ -1,9 +1,9 @@
-package se.sebull.gdax.restapi;
+package se.sebull.gdax.rest.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GdaxProductStats {
+public class GdaxProductStatsResponse extends GdaxHttpResponse {
 
 	public Double open;
 	public Double high;

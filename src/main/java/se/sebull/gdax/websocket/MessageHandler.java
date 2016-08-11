@@ -1,4 +1,4 @@
-package se.sebull.gdax.client.websocket;
+package se.sebull.gdax.websocket;
 
 import javax.websocket.MessageHandler.Whole;
 
